@@ -930,25 +930,41 @@ const game = {
 
     setupInput() {
         document.addEventListener('keydown', (e) => {
-            this.keys[e.code] = true;
-            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+            // Track all key states
+            const code = e.code;
+            const key = e.key;
+            this.keys[code] = true;
+            // Also track common alternate key identifiers
+            if (key === 'Enter') this.keys['Enter'] = true;
+            if (key === ' ') this.keys['Space'] = true;
+
+            // Prevent default for game keys
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+                 'Enter', 'NumpadEnter'].includes(code) || key === 'Enter') {
                 e.preventDefault();
             }
 
-            if (e.code === 'Enter') {
+            // Handle Enter (main Enter + numpad)
+            if (code === 'Enter' || code === 'NumpadEnter' || key === 'Enter') {
                 if (this.state === 'MENU') {
                     this.startGame();
                 } else if (this.state === 'GAME_OVER') {
                     this.startGame();
-                } else if (this.state === 'LEVEL_COMPLETE') {
-                    // Already handled via timer
                 }
             }
         });
 
         document.addEventListener('keyup', (e) => {
-            this.keys[e.code] = false;
+            const code = e.code;
+            const key = e.key;
+            this.keys[code] = false;
+            if (key === 'Enter') this.keys['Enter'] = false;
+            if (key === ' ') this.keys['Space'] = false;
         });
+
+        // Ensure the page can receive keyboard focus
+        document.body.setAttribute('tabindex', '0');
+        document.body.focus();
     },
 
     // ---- UPDATE ----
@@ -1482,8 +1498,12 @@ const game = {
 
     // ---- GAME LOOP ----
     gameLoop() {
-        this.update();
-        this.render();
+        try {
+            this.update();
+            this.render();
+        } catch (e) {
+            console.error('Game error:', e);
+        }
         requestAnimationFrame(() => this.gameLoop());
     }
 };
@@ -1491,6 +1511,11 @@ const game = {
 // ---- Start ----
 game.init();
 game.gameLoop();
+
+// Click anywhere to focus the page for keyboard input
+document.addEventListener('click', () => {
+    document.body.focus();
+});
 </script>
 </body>
 </html>
